@@ -1,0 +1,41 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Movie {
+  id         String   @id @default(cuid())
+  title      String
+  duration   String
+  type       String
+  subtitle   String
+  videoUrl   String
+  posterUrl  String?
+  year       String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model HeroContent {
+  id         String   @id @default("hero-main")
+  title      String
+  subtitle   String
+  imageUrl   String
+  buttonText String
+  updatedAt  DateTime @updatedAt
+}
+
+model CustomSection {
+  id            String   @id @default(cuid())
+  title         String
+  content       String
+  imageUrl      String
+  imagePosition String   // 'left' | 'right'
+  page          String   // 'home' | 'on-demand' | 'discover'
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
