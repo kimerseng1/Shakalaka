@@ -1,17 +1,17 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/src/lib/prisma';
 
-export async function GET() {
-  try {
-    const movies = await prisma.movie.findMany({
-      orderBy: { createdAt: 'desc' }
-    });
-    return NextResponse.json(movies);
-  } catch (error) {
-    console.error('Error fetching movies:', error);
-    return NextResponse.json({ error: 'Failed to fetch movies' }, { status: 500 });
-  }
-}
+// export async function GET() {
+//   try {
+//     const movies = await prisma.movie.findMany({
+//       orderBy: { createdAt: 'desc' }
+//     });
+//     return NextResponse.json(movies);
+//   } catch (error) {
+//     console.error('Error fetching movies:', error);
+//     return NextResponse.json({ error: 'Failed to fetch movies' }, { status: 500 });
+//   }
+// }
 
 export async function POST(request: Request) {
   try {
