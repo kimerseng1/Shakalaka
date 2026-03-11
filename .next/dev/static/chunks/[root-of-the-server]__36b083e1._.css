@@ -648,6 +648,10 @@
     max-height: 80vh;
   }
 
+  .max-h-\[700px\] {
+    max-height: 700px;
+  }
+
   .min-h-screen {
     min-height: 100vh;
   }
@@ -1226,6 +1230,10 @@
     padding-top: calc(var(--spacing) * 16);
   }
 
+  .pr-2 {
+    padding-right: calc(var(--spacing) * 2);
+  }
+
   .pr-4 {
     padding-right: calc(var(--spacing) * 4);
   }
@@ -1651,6 +1659,12 @@
   @media (min-width: 40rem) {
     .sm\:block {
       display: block;
+    }
+  }
+
+  @media (min-width: 40rem) {
+    .sm\:grid-cols-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 

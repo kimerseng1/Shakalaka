@@ -8,12 +8,12 @@ import { MOVIE_TYPES } from '@/src/constants';
 
 interface MovieFormProps {
   movie?: Movie;
-  onSubmit: (movie: Omit<Movie, 'id'>) => void;
   onClose: () => void;
+  onSuccess?: () => void; // optional callback after successful submit
 }
 
-const MovieForm = ({ movie, onSubmit, onClose }: MovieFormProps) => {
-  const [formData, setFormData] = useState({
+const MovieForm = ({ movie, onClose, onSuccess }: MovieFormProps) => {
+  const [formData, setFormData] = useState<Omit<Movie, 'id'>>({
     title: movie?.title || '',
     duration: movie?.duration || '',
     type: movie?.type || MOVIE_TYPES[0],
@@ -23,9 +23,37 @@ const MovieForm = ({ movie, onSubmit, onClose }: MovieFormProps) => {
     year: movie?.year || '2024'
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData as Omit<Movie, 'id'>);
+    setLoading(true);
+    setError(null);
+
+    try {
+      const endpoint = movie ? `/api/movies/${movie.id}` : '/api/movies';
+      const method = movie ? 'PUT' : 'POST';
+
+      const res = await fetch(endpoint, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Something went wrong');
+      }
+
+      // Optional callback
+      onSuccess?.();
+      onClose();
+    } catch (err: any) {
+      setError(err.message || 'Server error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -44,7 +72,11 @@ const MovieForm = ({ movie, onSubmit, onClose }: MovieFormProps) => {
             <X size={20} />
           </button>
         </div>
+
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          {error && <p className="text-red-500 text-sm">{error}</p>}
+
+          {/* Movie Title */}
           <div className="space-y-2">
             <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Movie Title</label>
             <input
@@ -56,6 +88,8 @@ const MovieForm = ({ movie, onSubmit, onClose }: MovieFormProps) => {
               placeholder="e.g. Inception"
             />
           </div>
+
+          {/* Duration + Year */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Duration</label>
@@ -68,6 +102,7 @@ const MovieForm = ({ movie, onSubmit, onClose }: MovieFormProps) => {
                 placeholder="e.g. 2h 15m"
               />
             </div>
+
             <div className="space-y-2">
               <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Year</label>
               <input
@@ -80,6 +115,8 @@ const MovieForm = ({ movie, onSubmit, onClose }: MovieFormProps) => {
               />
             </div>
           </div>
+
+          {/* Type + Subtitle */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Type</label>
@@ -93,6 +130,7 @@ const MovieForm = ({ movie, onSubmit, onClose }: MovieFormProps) => {
                 ))}
               </select>
             </div>
+
             <div className="space-y-2">
               <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Subtitle</label>
               <select
@@ -106,6 +144,8 @@ const MovieForm = ({ movie, onSubmit, onClose }: MovieFormProps) => {
               </select>
             </div>
           </div>
+
+          {/* Video URL */}
           <div className="space-y-2">
             <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Video URL</label>
             <input
@@ -117,6 +157,8 @@ const MovieForm = ({ movie, onSubmit, onClose }: MovieFormProps) => {
               placeholder="https://..."
             />
           </div>
+
+          {/* Poster URL */}
           <div className="space-y-2">
             <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Poster URL (Optional)</label>
             <input
@@ -127,6 +169,8 @@ const MovieForm = ({ movie, onSubmit, onClose }: MovieFormProps) => {
               placeholder="https://..."
             />
           </div>
+
+          {/* Buttons */}
           <div className="pt-4 flex gap-3">
             <button
               type="button"
@@ -137,9 +181,10 @@ const MovieForm = ({ movie, onSubmit, onClose }: MovieFormProps) => {
             </button>
             <button
               type="submit"
+              disabled={loading}
               className="flex-1 px-4 py-3 bg-[#e5a00d] text-black font-bold rounded-xl hover:scale-[1.02] transition-all shadow-lg shadow-[#e5a00d]/20"
             >
-              {movie ? 'Save Changes' : 'Create Movie'}
+              {loading ? 'Saving...' : movie ? 'Save Changes' : 'Create Movie'}
             </button>
           </div>
         </form>

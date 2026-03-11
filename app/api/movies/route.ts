@@ -1,35 +1,25 @@
-import { NextResponse } from 'next/server';
-import prisma from '@/src/lib/prisma';
+import { movieController } from "@/src/controller/movie.contoller";
+import { NextResponse } from "next/server";
 
-// export async function GET() {
-//   try {
-//     const movies = await prisma.movie.findMany({
-//       orderBy: { createdAt: 'desc' }
-//     });
-//     return NextResponse.json(movies);
-//   } catch (error) {
-//     console.error('Error fetching movies:', error);
-//     return NextResponse.json({ error: 'Failed to fetch movies' }, { status: 500 });
-//   }
-// }
-
-export async function POST(request: Request) {
+export async function GET() {
   try {
-    const body = await request.json();
-    const movie = await prisma.movie.create({
-      data: {
-        title: body.title,
-        duration: body.duration,
-        type: body.type,
-        subtitle: body.subtitle,
-        videoUrl: body.videoUrl,
-        posterUrl: body.posterUrl,
-        year: body.year,
-      }
-    });
+    console.log("GET /api/movies called");  // debug log
+    const movies = await movieController.getMovies();
+    console.log("Movies fetched:", movies);  // debug log
+    return NextResponse.json(movies);
+  } catch (error) {
+    console.error("GET /api/movies error:", error);
+    return NextResponse.json({ message: "Server error", error: error instanceof Error ? error.message : error }, { status: 500 });
+  }
+}
+
+export async function POST(req: Request) {
+  try {
+    const data = await req.json();
+    const movie = await movieController.createMovie(data);
     return NextResponse.json(movie);
   } catch (error) {
-    console.error('Error creating movie:', error);
-    return NextResponse.json({ error: 'Failed to create movie' }, { status: 500 });
+    console.error("POST /api/movies error:", error);
+    return NextResponse.json({ message: "Server error", error }, { status: 500 });
   }
 }

@@ -21,9 +21,9 @@ const Navbar = () => {
             </Link>
             
             <div className="hidden md:flex items-center gap-6 text-sm font-medium text-zinc-400">
-              <Link href="/" className={`hover:text-white transition-colors ${pathname === '/' ? 'text-white' : ''}`}>Live TV</Link>
-              <Link href="/on-demand" className={`hover:text-white transition-colors ${pathname === '/on-demand' ? 'text-white' : ''}`}>On Demand</Link>
-              <Link href="/discover" className={`hover:text-white transition-colors ${pathname === '/discover' ? 'text-white' : ''}`}>Discover</Link>
+              <Link href="/" className={`hover:text-white transition-colors ${pathname === '/' ? 'text-white' : ''}`}>Movie</Link>
+              {/* <Link href="/on-demand" className={`hover:text-white transition-colors ${pathname === '/on-demand' ? 'text-white' : ''}`}>On Demand</Link>
+              <Link href="/discover" className={`hover:text-white transition-colors ${pathname === '/discover' ? 'text-white' : ''}`}>Discover</Link> */}
             </div>
           </div>
 
@@ -45,13 +45,13 @@ const Navbar = () => {
             >
               <LayoutDashboard size={20} />
             </Link>
-            <div className="flex items-center gap-2 text-zinc-400 hover:text-white cursor-pointer transition-colors">
+            {/* <div className="flex items-center gap-2 text-zinc-400 hover:text-white cursor-pointer transition-colors">
               <Bookmark size={20} />
               <span className="text-sm font-medium hidden lg:block">Watchlist</span>
             </div>
             <button className="bg-white text-black px-4 py-1.5 rounded-full text-sm font-bold hover:bg-zinc-200 transition-colors">
               Sign In
-            </button>
+            </button> */}
           </div>
         </div>
       </div>

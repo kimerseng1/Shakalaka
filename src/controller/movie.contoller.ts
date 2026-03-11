@@ -1,32 +1,21 @@
-import { Controller, Get, Post, Body, Param, Patch, Delete } from '@nestjs/common';
-import { MovieService } from '../service/movie.service';
+import { movieService } from "@/src/services/movie.service";
 
-@Controller('movies')
-export class MovieController {
-  constructor(private readonly movieService: MovieService) {}
+export const movieController = {
 
-  @Post()
-  create(@Body() data: any) {
-    return this.movieService.create(data);
-  }
+  async getMovies() {
+    return await movieService.getMovies();
+  },
 
-  @Get()
-  findAll() {
-    return this.movieService.findAll();
-  }
+  async createMovie(data: any) {
+    return await movieService.createMovie(data);
+  },
 
-  @Get(':id')
-  findOne(@Param('id') id: number) {
-    return this.movieService.findOne(id);
-  }
+  async updateMovie(id: number, data: any) {
+    return await movieService.updateMovie(id, data);
+  },
 
-  @Patch(':id')
-  update(@Param('id') id: number, @Body() data: any) {
-    return this.movieService.update(id, data);
-  }
+  async deleteMovie(id: number) {
+    return await movieService.deleteMovie(id);
+  },
 
-  @Delete(':id')
-  remove(@Param('id') id: number) {
-    return this.movieService.remove(id);
-  }
-}
+};
