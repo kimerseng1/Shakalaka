@@ -9,14 +9,32 @@ const Footer = () => (
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-12 mb-16">
         <div className="col-span-2 lg:col-span-1">
           <div className="flex items-center gap-2 mb-6">
-            <div className="w-8 h-8 bg-[#e5a00d] rounded flex items-center justify-center text-black font-bold">P</div>
-            <span className="text-2xl font-black tracking-tighter text-white">plex</span>
+            <div className="w-8 h-8 bg-[#e5a00d] rounded flex items-center justify-center text-black font-bold">S</div>
+            <span className="text-2xl font-black tracking-tighter text-white">SHAKALAKA</span>
           </div>
           <div className="flex gap-4">
-            <Instagram size={20} className="text-zinc-500 hover:text-white cursor-pointer" />
-            <Twitter size={20} className="text-zinc-500 hover:text-white cursor-pointer" />
-            <Facebook size={20} className="text-zinc-500 hover:text-white cursor-pointer" />
-            <Youtube size={20} className="text-zinc-500 hover:text-white cursor-pointer" />
+            <a
+              href="https://www.instagram.com/_shakalaka_?igsh=MXA0NmhqaTJrOXRkcw=="
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Instagram size={20} className="text-zinc-500 hover:text-white transition-colors" />
+            </a>
+            {/* <a
+              href="https://www.tiktok.com/@shakalakamovie1?_r=1&_t=ZS-94VpeJ6fW1U"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Twitter size={20} className="text-zinc-500 hover:text-white transition-colors" />
+            </a> */}
+            <a
+              href="https://www.facebook.com/share/1DkgL3mtGH/?mibextid=wwXIfr"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Facebook size={20} className="text-zinc-500 hover:text-white transition-colors" />
+            </a>
+            
           </div>
         </div>
         

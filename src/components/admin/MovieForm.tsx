@@ -9,7 +9,8 @@ import { MOVIE_TYPES } from '@/src/constants';
 interface MovieFormProps {
   movie?: Movie;
   onClose: () => void;
-  onSuccess?: () => void; // optional callback after successful submit
+  // optional callback after successful submit - may return a promise
+  onSuccess?: (data: Omit<Movie, 'id'>) => void | Promise<void>;
 }
 
 const MovieForm = ({ movie, onClose, onSuccess }: MovieFormProps) => {
@@ -18,9 +19,9 @@ const MovieForm = ({ movie, onClose, onSuccess }: MovieFormProps) => {
     duration: movie?.duration || '',
     type: movie?.type || MOVIE_TYPES[0],
     subtitle: movie?.subtitle || 'EN',
-    videoUrl: movie?.videoUrl || '',
-    posterUrl: movie?.posterUrl || '',
-    year: movie?.year || '2024'
+    videoUrl: movie?.videoUrl || '',       // optional
+    posterUrl: movie?.posterUrl || '',     // required
+    year: movie?.year || '2024',
   });
 
   const [loading, setLoading] = useState(false);
@@ -31,49 +32,46 @@ const MovieForm = ({ movie, onClose, onSuccess }: MovieFormProps) => {
     setLoading(true);
     setError(null);
 
+    // Validate required fields
+    if (!formData.title || !formData.duration || !formData.type || !formData.posterUrl || !formData.year) {
+      setError('Please fill in all required fields');
+      setLoading(false);
+      return;
+    }
+
     try {
-      const endpoint = movie ? `/api/movies/${movie.id}` : '/api/movies';
-      const method = movie ? 'PUT' : 'POST';
-
-      const res = await fetch(endpoint, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Something went wrong');
-      }
-
-      // Optional callback
-      onSuccess?.();
+      // Emit form data to parent for create/update handling
+      await onSuccess?.(formData);
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Server error');
+      setError(err?.message || 'Server error');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[60] bg-black/90 backdrop-blur-sm overflow-y-auto">
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-[#1a1a1a] border border-white/10 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden"
+        initial={{ opacity: 0, y: -50 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -50 }}
+        className="relative mx-auto my-8 max-w-3xl w-full bg-[#1a1a1a] border border-white/10 rounded-3xl shadow-2xl p-6 sm:p-8"
       >
-        <div className="px-6 py-4 border-b border-white/10 flex justify-between items-center bg-white/5">
-          <h2 className="text-xl font-bold text-white">
-            {movie ? 'Edit Movie' : 'Create New Movie'}
-          </h2>
-          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors text-white">
-            <X size={20} />
-          </button>
-        </div>
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 p-2 hover:bg-white/10 rounded-full transition-colors text-white"
+        >
+          <X size={24} />
+        </button>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        {/* Title */}
+        <h2 className="text-2xl font-bold text-white mb-6">
+          {movie ? 'Edit Movie' : 'Create New Movie'}
+        </h2>
+
+        <form onSubmit={handleSubmit} className="space-y-5">
           {error && <p className="text-red-500 text-sm">{error}</p>}
 
           {/* Movie Title */}
@@ -84,13 +82,13 @@ const MovieForm = ({ movie, onClose, onSuccess }: MovieFormProps) => {
               type="text"
               value={formData.title}
               onChange={e => setFormData({ ...formData, title: e.target.value })}
-              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-[#e5a00d] focus:border-transparent outline-none transition-all text-white"
+              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-[#e5a00d] outline-none text-white transition-all"
               placeholder="e.g. Inception"
             />
           </div>
 
           {/* Duration + Year */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Duration</label>
               <input
@@ -98,7 +96,7 @@ const MovieForm = ({ movie, onClose, onSuccess }: MovieFormProps) => {
                 type="text"
                 value={formData.duration}
                 onChange={e => setFormData({ ...formData, duration: e.target.value })}
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-[#e5a00d] focus:border-transparent outline-none transition-all text-white"
+                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-[#e5a00d] outline-none text-white transition-all"
                 placeholder="e.g. 2h 15m"
               />
             </div>
@@ -110,20 +108,20 @@ const MovieForm = ({ movie, onClose, onSuccess }: MovieFormProps) => {
                 type="text"
                 value={formData.year}
                 onChange={e => setFormData({ ...formData, year: e.target.value })}
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-[#e5a00d] focus:border-transparent outline-none transition-all text-white"
+                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-[#e5a00d] outline-none text-white transition-all"
                 placeholder="e.g. 2024"
               />
             </div>
           </div>
 
           {/* Type + Subtitle */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Type</label>
               <select
                 value={formData.type}
                 onChange={e => setFormData({ ...formData, type: e.target.value })}
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-[#e5a00d] focus:border-transparent outline-none transition-all appearance-none text-white"
+                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-[#e5a00d] outline-none text-white transition-all"
               >
                 {MOVIE_TYPES.map(type => (
                   <option key={type} value={type} className="bg-[#1a1a1a]">{type}</option>
@@ -136,7 +134,7 @@ const MovieForm = ({ movie, onClose, onSuccess }: MovieFormProps) => {
               <select
                 value={formData.subtitle}
                 onChange={e => setFormData({ ...formData, subtitle: e.target.value as SubtitleLanguage })}
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-[#e5a00d] focus:border-transparent outline-none transition-all appearance-none text-white"
+                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-[#e5a00d] outline-none text-white transition-all"
               >
                 <option value="EN" className="bg-[#1a1a1a]">English</option>
                 <option value="KH" className="bg-[#1a1a1a]">Khmer</option>
@@ -145,33 +143,33 @@ const MovieForm = ({ movie, onClose, onSuccess }: MovieFormProps) => {
             </div>
           </div>
 
-          {/* Video URL */}
+          {/* Video URL (optional) */}
           <div className="space-y-2">
-            <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Video URL</label>
+            <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Video URL (Optional)</label>
             <input
-              required
               type="url"
               value={formData.videoUrl}
               onChange={e => setFormData({ ...formData, videoUrl: e.target.value })}
-              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-[#e5a00d] focus:border-transparent outline-none transition-all text-white"
+              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-[#e5a00d] outline-none text-white transition-all"
               placeholder="https://..."
             />
           </div>
 
-          {/* Poster URL */}
+          {/* Poster URL (required) */}
           <div className="space-y-2">
-            <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Poster URL (Optional)</label>
+            <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Poster URL</label>
             <input
+              required
               type="url"
               value={formData.posterUrl}
               onChange={e => setFormData({ ...formData, posterUrl: e.target.value })}
-              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-[#e5a00d] focus:border-transparent outline-none transition-all text-white"
+              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-[#e5a00d] outline-none text-white transition-all"
               placeholder="https://..."
             />
           </div>
 
           {/* Buttons */}
-          <div className="pt-4 flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3 pt-4">
             <button
               type="button"
               onClick={onClose}

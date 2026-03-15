@@ -5,8 +5,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "CineManage - Plex Style Movie Management",
-  description: "Manage your movie library with a modern, dark aesthetic.",
+  title: "Shakalaka Movie ",
+  description: "Shakalaka Movie.",
 };
 
 export default function RootLayout({

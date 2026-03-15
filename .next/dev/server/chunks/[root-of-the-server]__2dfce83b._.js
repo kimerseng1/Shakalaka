@@ -75,14 +75,32 @@ var __turbopack_async_dependencies__ = __turbopack_handle_async_dependencies__([
 [__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__] = __turbopack_async_dependencies__.then ? (await __turbopack_async_dependencies__)() : __turbopack_async_dependencies__;
 ;
 const movieService = {
+    // Get all movies
     async getMovies () {
         const result = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["pool"].query("SELECT * FROM movie ORDER BY id DESC");
         return result.rows;
     },
+    // Search movies
+    async searchMovies (search) {
+        if (!search) {
+            const result = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["pool"].query("SELECT * FROM movie ORDER BY id DESC");
+            return result.rows;
+        }
+        const result = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["pool"].query(`SELECT * FROM movie
+       WHERE LOWER(title) LIKE LOWER($1)
+       ORDER BY id DESC`, [
+            `%${search}%`
+        ]);
+        return result.rows;
+    },
+    // Create movie
     async createMovie (data) {
-        const { title, duration, type, subtitle, videoUrl, poster } = data;
+        const { title, duration, type, subtitle, videoUrl } = data;
+        // accept either poster or posterUrl from client
+        const poster = data.poster ?? data.posterUrl ?? null;
         const result = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["pool"].query(`INSERT INTO movie (title, duration, type, subtitle, "videoUrl", poster)
-       VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`, [
+       VALUES ($1,$2,$3,$4,$5,$6)
+       RETURNING *`, [
             title,
             duration,
             type,
@@ -92,13 +110,20 @@ const movieService = {
         ]);
         return result.rows[0];
     },
+    // Update movie
     async updateMovie (id, data) {
-        const { title, duration, type, subtitle, videoUrl, poster } = data;
-        // make sure id is number
+        const { title, duration, type, subtitle, videoUrl } = data;
+        const poster = data.poster ?? data.posterUrl ?? null;
         if (!id) throw new Error("Movie ID is missing");
         const result = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["pool"].query(`UPDATE movie
-     SET title=$1, duration=$2, type=$3, subtitle=$4, "videoUrl"=$5, poster=$6
-     WHERE id=$7 RETURNING *`, [
+       SET title=$1,
+           duration=$2,
+           type=$3,
+           subtitle=$4,
+           "videoUrl"=$5,
+           poster=$6
+       WHERE id=$7
+       RETURNING *`, [
             title,
             duration,
             type,
@@ -112,6 +137,7 @@ const movieService = {
         }
         return result.rows[0];
     },
+    // Delete movie
     async deleteMovie (id) {
         await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["pool"].query("DELETE FROM movie WHERE id=$1", [
             id
@@ -135,15 +161,30 @@ var __turbopack_async_dependencies__ = __turbopack_handle_async_dependencies__([
 ]);
 [__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$services$2f$movie$2e$service$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__] = __turbopack_async_dependencies__.then ? (await __turbopack_async_dependencies__)() : __turbopack_async_dependencies__;
 ;
+function normalizeMovie(row) {
+    if (!row) return row;
+    // prefer posterUrl if already present, otherwise map poster -> posterUrl
+    return {
+        ...row,
+        posterUrl: row.posterUrl ?? row.poster ?? null
+    };
+}
 const movieController = {
     async getMovies () {
-        return await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$services$2f$movie$2e$service$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["movieService"].getMovies();
+        const rows = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$services$2f$movie$2e$service$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["movieService"].getMovies();
+        return rows.map((r)=>normalizeMovie(r));
+    },
+    async searchMovies (search) {
+        const rows = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$services$2f$movie$2e$service$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["movieService"].searchMovies(search);
+        return rows.map((r)=>normalizeMovie(r));
     },
     async createMovie (data) {
-        return await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$services$2f$movie$2e$service$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["movieService"].createMovie(data);
+        const row = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$services$2f$movie$2e$service$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["movieService"].createMovie(data);
+        return normalizeMovie(row);
     },
     async updateMovie (id, data) {
-        return await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$services$2f$movie$2e$service$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["movieService"].updateMovie(id, data);
+        const row = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$services$2f$movie$2e$service$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["movieService"].updateMovie(id, data);
+        return normalizeMovie(row);
     },
     async deleteMovie (id) {
         return await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$services$2f$movie$2e$service$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["movieService"].deleteMovie(id);
@@ -176,11 +217,19 @@ var __turbopack_async_dependencies__ = __turbopack_handle_async_dependencies__([
 [__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$controller$2f$movie$2e$contoller$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__] = __turbopack_async_dependencies__.then ? (await __turbopack_async_dependencies__)() : __turbopack_async_dependencies__;
 ;
 ;
-async function GET() {
+async function GET(req) {
     try {
-        console.log("GET /api/movies called"); // debug log
-        const movies = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$controller$2f$movie$2e$contoller$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["movieController"].getMovies();
-        console.log("Movies fetched:", movies); // debug log
+        console.log("GET /api/movies called");
+        const { searchParams } = new URL(req.url);
+        const search = searchParams.get("search");
+        let movies;
+        if (search) {
+            console.log("Searching movies:", search);
+            movies = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$controller$2f$movie$2e$contoller$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["movieController"].searchMovies(search);
+        } else {
+            movies = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$controller$2f$movie$2e$contoller$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["movieController"].getMovies();
+        }
+        console.log("Movies fetched:", movies);
         return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json(movies);
     } catch (error) {
         console.error("GET /api/movies error:", error);
@@ -195,6 +244,18 @@ async function GET() {
 async function POST(req) {
     try {
         const data = await req.json();
+        // If a poster URL is provided, check it's a valid URL string (don't require network reachability)
+        if (data.posterUrl) {
+            try {
+                new URL(String(data.posterUrl));
+            } catch (err) {
+                return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
+                    message: 'Poster URL must be a valid URL'
+                }, {
+                    status: 400
+                });
+            }
+        }
         const movie = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$controller$2f$movie$2e$contoller$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["movieController"].createMovie(data);
         return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json(movie);
     } catch (error) {

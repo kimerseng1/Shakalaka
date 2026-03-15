@@ -1,95 +1,79 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { AnimatePresence } from 'motion/react';
 import { Plus, Trash2, Edit2, Film } from 'lucide-react';
 import Navbar from '@/src/components/Navbar';
 import MovieForm from '@/src/components/admin/MovieForm';
-import { Movie, HeroContent } from '@/src/types';
-import { INITIAL_HERO } from '@/src/constants';
+import { Movie } from '@/src/types';
 
 export default function AdminPage() {
   const [movies, setMovies] = useState<Movie[]>([]);
-  const [heroContent, setHeroContent] = useState<HeroContent>(INITIAL_HERO);
   const [isLoading, setIsLoading] = useState(true);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingMovie, setEditingMovie] = useState<Movie | undefined>();
-
-  useEffect(() => {
-    fetchMovies();
-  }, []);
+  const [editingMovie, setEditingMovie] = useState<Movie | null>(null);
 
   // Fetch all movies
   const fetchMovies = async () => {
+    setIsLoading(true);
     try {
       const res = await fetch('/api/movies');
-      const data = await res.json();
+      if (!res.ok) throw new Error('Failed to fetch movies');
+      const data: Movie[] = await res.json();
       setMovies(data);
-    } catch (error) {
-      console.error('Error fetching movies:', error);
+    } catch (error: any) {
+      console.error('Error fetching movies:', error.message);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Add new movie
-  const handleAddMovie = async (movieData: Omit<Movie, 'id'>) => {
+  useEffect(() => {
+    fetchMovies();
+  }, []);
+
+  // Create or update movie
+  const handleSubmitMovie = async (movieData: Omit<Movie, 'id'>, id?: string | number) => {
     try {
-      const res = await fetch('/api/movies', {
-        method: 'POST',
+  const url = id ? `/api/movies/${id}` : '/api/movies';
+      const method = id ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(movieData),
       });
 
-      if (res.ok) {
-        fetchMovies();
-        setIsFormOpen(false);
-      }
-    } catch (error) {
-      console.error('Error adding movie:', error);
-    }
-  };
-
-  // Edit movie using PUT
-  const handleEditMovie = async (movieData: Omit<Movie, 'id'>) => {
-    if (!editingMovie) return;
-    try {
-      const res = await fetch(`/api/movies/${editingMovie.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(movieData),
-      });
-
-      if (res.ok) {
-        fetchMovies();
-        setIsFormOpen(false);
-        setEditingMovie(undefined);
-      } else {
+      if (!res.ok) {
         const err = await res.json();
-        console.error('Error editing movie:', err.message);
+        throw new Error(err.message || 'Failed to save movie');
       }
-    } catch (error) {
-      console.error('Error editing movie:', error);
+
+      await fetchMovies();
+      setIsFormOpen(false);
+      setEditingMovie(null);
+    } catch (error: any) {
+      console.error('Error saving movie:', error.message);
+      alert(`Error: ${error.message}`);
     }
   };
 
-  // Delete movie using DELETE
-  const handleDeleteMovie = async (id: string) => {
+  // Delete movie
+  const handleDeleteMovie = async (id: string | number) => {
     if (!confirm('Are you sure you want to delete this movie?')) return;
-    try {
-      const res = await fetch(`/api/movies/${id}`, {
-        method: 'DELETE',
-      });
 
-      if (res.ok) {
-        fetchMovies();
-      } else {
+    try {
+  const res = await fetch(`/api/movies/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
         const err = await res.json();
-        console.error('Error deleting movie:', err.message);
+        throw new Error(err.message || 'Failed to delete movie');
       }
-    } catch (error) {
-      console.error('Error deleting movie:', error);
+
+      await fetchMovies();
+    } catch (error: any) {
+      console.error('Error deleting movie:', error.message);
+      alert(`Error deleting movie: ${error.message}`);
     }
   };
 
@@ -109,19 +93,18 @@ export default function AdminPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
           <div>
-            <h1 className="text-4xl font-black text-white mb-2">Admin Dashboard</h1>
+            <h1 className="text-4xl font-black text-white mb-2">Movie Manage</h1>
             <p className="text-zinc-500">Manage your movie library.</p>
           </div>
           <div className="flex gap-3">
             <button
               onClick={() => {
-                setEditingMovie(undefined);
+                setEditingMovie(null);
                 setIsFormOpen(true);
               }}
               className="flex items-center gap-2 px-6 py-3 bg-[#e5a00d] text-black font-bold rounded-2xl hover:scale-105 transition-all shadow-xl shadow-[#e5a00d]/20"
             >
-              <Plus size={20} />
-              Add Movie
+              <Plus size={20} /> Add Movie
             </button>
           </div>
         </div>
@@ -141,7 +124,11 @@ export default function AdminPage() {
                   <img
                     src={movie.posterUrl || `https://picsum.photos/seed/${movie.id}/400/300`}
                     className="w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-500"
-                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      const img = e.currentTarget as HTMLImageElement;
+                      img.onerror = null;
+                      img.src = `https://picsum.photos/seed/${movie.id}/400/300`;
+                    }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
                   <div className="absolute bottom-4 left-4">
@@ -175,17 +162,22 @@ export default function AdminPage() {
         </section>
       </main>
 
+      {/* MovieForm modal */}
       <AnimatePresence>
         {isFormOpen && (
           <MovieForm
-            {...({
-              movie: editingMovie,
-              onSubmit: editingMovie ? handleEditMovie : handleAddMovie,
-              onClose: () => {
-                setIsFormOpen(false);
-                setEditingMovie(undefined);
-              },
-            } as any)}
+            movie={editingMovie ?? undefined}
+            onClose={() => {
+              setIsFormOpen(false);
+              setEditingMovie(null);
+            }}
+            onSuccess={async (data: Omit<Movie, 'id'>) => {
+              // Use the ID of editingMovie for updates (keep as string if that's what DB uses)
+              await handleSubmitMovie(
+                data,
+                editingMovie?.id ?? undefined
+              );
+            }}
           />
         )}
       </AnimatePresence>
